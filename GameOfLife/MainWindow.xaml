@@ -21,8 +21,12 @@
             <Label>Generation</Label>
             <Label>0</Label>
             <Label>Duration</Label>
-            <Label MouseDown="UIElement_OnMouseDown">100ms</Label>
+            <Label>100ms</Label>
         </StackPanel>
-        <Image x:Name="MyImage" Stretch="None" VerticalAlignment="Center" HorizontalAlignment="Center"/>
+        <Image x:Name="MyImage" Stretch="None" VerticalAlignment="Center" HorizontalAlignment="Center" Source="{Binding Source}">
+            <Image.InputBindings>
+                <MouseBinding Command="{Binding ToggleNode}" MouseAction="LeftClick" CommandParameter="{Binding ElementName=MyImage}"></MouseBinding>
+            </Image.InputBindings>
+        </Image>
     </DockPanel>
 </Window>

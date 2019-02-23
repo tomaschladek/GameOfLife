@@ -2,6 +2,8 @@
 using System.Collections.Generic;
 using System.Windows;
 using System.Windows.Input;
+using System.Windows.Media;
+using System.Windows.Media.Imaging;
 using Prism.Commands;
 using Prism.Mvvm;
 
@@ -9,41 +11,53 @@ namespace GameOfLife
 {
     public class ViewModel : BindableBase
     {
-        private double _resolution = 8;
+        private int _resolution = 8;
         private const int MaxResolution = 32;
         private const int MinResolution = 2;
         public ICommand ZoomIn { get; set; }
         public ICommand ZoomOut { get; set; }
-        public ICommand AddNode { get; set; }
+        public ICommand ToggleNode { get; set; }
         private ISet<NodeDto> _nodes = new HashSet<NodeDto>();
+        private GridBitmap _image;
 
         public ViewModel()
         {
             ZoomIn = new DelegateCommand(ZoomInExecution);
             ZoomOut = new DelegateCommand(ZoomOutExecution);
-            AddNode = new PositioningCommand(AddNodeExecution);
+            ToggleNode = new PositioningCommand(ToggleNodeExecution);
+            _image = new GridBitmap(_resolution);
         }
 
-        private void AddNodeExecution(Point point)
+        private void ToggleNodeExecution(Point point)
         {
-            
+            _image.DrawPixels((int) point.X,(int) point.Y,Colors.White);
         }
 
         private void ZoomInExecution()
         {
-            var newResolution = Math.Round(Math.Min(_resolution*2,MaxResolution));
+            var newResolution = Math.Min(_resolution * 2, MaxResolution);
+            SetResolution(newResolution);
+        }
+
+        private void SetResolution(int newResolution)
+        {
             SetProperty(ref _resolution, newResolution);
             RaisePropertyChanged(nameof(Zoom));
+            _image.Resolution = newResolution;
         }
 
         private void ZoomOutExecution()
         {
-            var newResolution = Math.Round(Math.Max(_resolution/2,MinResolution));
-            SetProperty(ref _resolution, newResolution);
-            RaisePropertyChanged(nameof(Zoom));
+            var newResolution = Math.Max(_resolution/2,MinResolution);
+            SetResolution(newResolution);
         }
 
         public string Zoom => Math.Round(Math.Log(_resolution,2)).ToString();
+
+        public WriteableBitmap Source
+        {
+            get => _image.Source;
+        }
     }
 
     public class NodeDto
