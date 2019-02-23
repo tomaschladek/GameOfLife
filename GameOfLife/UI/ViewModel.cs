@@ -8,6 +8,7 @@ using System.Windows.Input;
 using System.Windows.Media;
 using System.Windows.Media.Imaging;
 using GameOfLife.Dtos;
+using GameOfLife.Services;
 using Prism.Commands;
 using Prism.Mvvm;
 
@@ -34,6 +35,7 @@ namespace GameOfLife.UI
         private string _startLabel = "Start";
         private ESpeed _speed = ESpeed.Normal;
         private Visibility _resetVisibility = Visibility.Collapsed;
+        private GenerationProcessor _processor;
 
         public ViewModel()
         {
@@ -47,6 +49,7 @@ namespace GameOfLife.UI
             var factor = 1;
             _nodes = new NodeDto[width / factor, width / factor];
             _image = new GridBitmapWrapper(_resolution, width, width);
+            _processor = new GenerationProcessor(width/factor);
         }
 
         private void ToggleSpeedExecution()
@@ -88,105 +91,43 @@ namespace GameOfLife.UI
 
         private async void RunGenerations()
         {
-            var tempArray = new bool[_nodes.GetLength(0), _nodes.GetLength(1)];
+            var sw = new Stopwatch();
             while (!_token.IsCancellationRequested)
             {
-                Stopwatch sw = new Stopwatch();
+                sw.Restart();
 
-                sw.Start();
-
-                Parallel.For(0, _nodes.GetLength(0), row =>
+                var result = _processor.Execute(_nodes, _resolution);
+                Application.Current.Dispatcher.Invoke(() =>
                 {
-                    Parallel.For(0, _nodes.GetLength(1), column =>
+                    foreach (var position in result.ChangedPositions)
                     {
-                        tempArray[row,column] = IsAlive(row,column);
-                    });
-                });
-                var counter = 0;
-                Parallel.For(0, _nodes.GetLength(0), row =>
-                {
-                    Parallel.For(0, _nodes.GetLength(1), column =>
-                    {
-                        if (tempArray[row, column] != (_nodes[row,column]?.IsAlive ?? false))
-                        {
-                            if (_nodes[row, column] == null)
-                            {
-                                _nodes[row, column] = new NodeDto(tempArray[row, column]);
-                            }
-                            else
-                            {
-                                _nodes[row, column].IsAlive = tempArray[row, column];
-                            }
-                            if (tempArray[row, column])
-                            {
-                                Interlocked.Increment(ref counter);
-                                Application.Current.Dispatcher.InvokeAsync(() =>
-                                {
-                                    _image.DrawCell(row * _resolution, column * _resolution, Colors.CadetBlue);
-                                });
-                            }
-                            else
-                            {
-                                Interlocked.Decrement(ref counter);
-                                Application.Current.Dispatcher.InvokeAsync(() =>
-                                {
-                                    _image.DrawCell(row * _resolution, column * _resolution, Colors.White);
-                                });
-                            }
+                        _image.DrawCell(position.X, position.Y, position.IsAlive ? Colors.CadetBlue : Colors.White);
+                    }
 
-                       }
-                    });
+                    AliveCount += result.CounterDif;
                 });
+
 
                 sw.Stop();
                 Application.Current.Dispatcher.Invoke(() =>
                 {
                     GenerationCount++;
-                    Duration = (int) sw.ElapsedMilliseconds;
+                    Duration = (int)sw.ElapsedMilliseconds;
                 });
-                var maxTime = 0;
-                switch (_speed)
-                {
-                    case ESpeed.Normal:
-                        maxTime = 100;
-                        break;
-                    case ESpeed.Fast:
-                        maxTime = 50;
-                        break;
-                    case ESpeed.Faster:
-                        maxTime = 0;
-                        break;
-                }
-                await Task.Delay((int) Math.Max(0, maxTime - sw.ElapsedMilliseconds));
+                await Task.Delay((int)Math.Max(0, GetMaxDelayTime() - sw.ElapsedMilliseconds));
             }
         }
 
-        private bool IsAlive(int row, int column)
+        private int GetMaxDelayTime()
         {
-            var counter = 0;
-            for (int rowShift = -1; rowShift < 2 && counter < 4; rowShift++)
-            for (int colShift = -1; colShift < 2 && counter < 4; colShift++)
+            switch (_speed)
             {
-                if (rowShift == 0 && colShift == 0) continue;
-                if (row + rowShift >= 0
-                    && row + rowShift < _nodes.GetLength(0)
-                    && column + colShift >= 0
-                    && column + colShift < _nodes.GetLength(1)
-                    && _nodes[row + rowShift, column + colShift] != null
-                    && _nodes[row + rowShift, column + colShift].IsAlive)
-                {
-                    counter++;
-                }
-
+                case ESpeed.Normal:
+                    return 100;
+                case ESpeed.Fast:
+                    return 50;
             }
-
-            if (_nodes[row, column]?.IsAlive == true)
-            {
-                return counter == 2 || counter == 3;
-            }
-
-            return counter == 3;
-
+            return 0;
         }
 
         private void ResetViewExecution()
