@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Linq;
 using System.Windows;
 using System.Windows.Media;
 using System.Windows.Media.Imaging;
@@ -28,7 +29,7 @@ namespace GameOfLife.Dtos
                 96,
                 PixelFormats.Bgr32,
                 null);
-            DrawAll(Colors.White);
+            ClearDrawAll();
             DrawLines();
         }
 
@@ -45,9 +46,9 @@ namespace GameOfLife.Dtos
             }
         }
 
-        private void DrawAll(Color color)
+        private void ClearDrawAll()
         {
-            DrawPixelsArea(color,0,Width,0,Height);
+            DrawPixelsArea(Colors.White, 0, Width, 0, Height);
         }
 
         // The DrawPixel method updates the WriteableBitmap by using
@@ -58,26 +59,27 @@ namespace GameOfLife.Dtos
             var rowStart = row / Resolution * Resolution;
 
 
-            DrawPixelsArea(color, columnStart+ LineThicknes, Math.Min(Width-1,columnStart+Resolution), rowStart + LineThicknes, Math.Min(Height-1,rowStart+Resolution));
+            DrawPixelsArea(color, columnStart+ LineThicknes, columnStart+Resolution, rowStart + LineThicknes, rowStart+Resolution);
         }
 
         private void DrawPixelsArea(Color color, int fromColumn, int toColumn, int fromRow, int toRow)
         {
-            var red = color.R;
-            var green = color.G;
-            var blue = color.B;
+            if (fromColumn > Width || fromColumn < 0 || fromRow < 0 || fromRow > Height) return;
+
             try
             {
                 // Reserve the back buffer for updates.
                 Source.Lock();
 
-                for (int column = fromColumn; column < toColumn; column++)
-                {
-                    for (int row = fromRow; row < toRow; row++)
-                    {
-                        DrawPixel(red, green, blue, column, row);
-                    }
-                }
+                var width = Math.Min(Width, toColumn) - fromColumn;
+                var height = Math.Min(Height, toRow) - fromRow;
+
+                int stride = width * 4;
+                var pixels = Enumerable
+                    .Repeat(new []{ color.B, color.G, color.R, color.A }, height * stride/4)
+                    .SelectMany(item => item)
+                    .ToArray();
+                Source.WritePixels(new Int32Rect(fromColumn, fromRow, width, height), pixels, stride, 0);
             }
             finally
             {
@@ -86,34 +88,10 @@ namespace GameOfLife.Dtos
             }
         }
 
-        private void DrawPixel(int red, int green, int blue, int column, int row)
-        {
-            unsafe
-            {
-                // Get a pointer to the back buffer.
-                int pBackBuffer = (int)Source.BackBuffer;
-
-                // Find the address of the pixel to draw.
-                pBackBuffer += row * Source.BackBufferStride;
-                pBackBuffer += column * 4;
-
-                // Compute the pixel's color.
-                int colorData = red << 16; // R
-                colorData |= green << 8;   // G
-                colorData |= blue << 0;   // B
-
-                // Assign the color data to the pixel.
-                *((int*)pBackBuffer) = colorData;
-            }
-
-            // Specify the area of the bitmap that changed.
-            Source.AddDirtyRect(new Int32Rect(column, row, 1, 1));
-        }
-
         public void ChangeResolution(BitarrayWrapper nodes, int resolution)
         {
             Resolution = resolution;
-            DrawAll(Colors.White);
+            ClearDrawAll();
             RedrawImage(nodes);
             DrawLines();
         }
@@ -121,8 +99,12 @@ namespace GameOfLife.Dtos
         {
             for (var index = 0; index < nodes.Length; index++)
             {
-                var coordinates = nodes.GetCoordinates(index);
-                DrawCell(coordinates.Row * Resolution, coordinates.Column * Resolution, nodes[index] ? Colors.CadetBlue : Colors.White);
+                if (nodes[index])
+                {
+                    var coordinates = nodes.GetCoordinates(index);
+                    DrawCell(coordinates.Row * Resolution, coordinates.Column * Resolution, Colors.CadetBlue);
+                }
+                
             }
         }
     }

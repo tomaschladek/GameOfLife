@@ -98,10 +98,6 @@ namespace GameOfLife.Services
             {
                 AddToCollection(nodes,coordinateDtos,original.Index);
             }
-            for (var index = 0; index < nodes.Length; index++)
-            {
-                AddToCollection(nodes, coordinateDtos, index);
-            }
 
             return coordinateDtos;
         }
