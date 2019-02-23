@@ -23,6 +23,7 @@ namespace GameOfLife.UI
         public ICommand ToggleNode { get; set; }
         public ICommand ToggleStart { get; set; }
         public ICommand ResetView { get; set; }
+        public ICommand ToggleSpeed { get; set; }
         private NodeDto[,] _nodes;
         private GridBitmapWrapper _image;
         private int _aliveCount;
@@ -31,6 +32,7 @@ namespace GameOfLife.UI
         private bool _isRunning;
         private CancellationTokenSource _token;
         private string _startLabel = "Start";
+        private ESpeed _speed = ESpeed.Normal;
         private Visibility _resetVisibility = Visibility.Collapsed;
 
         public ViewModel()
@@ -39,11 +41,29 @@ namespace GameOfLife.UI
             ZoomOut = new DelegateCommand(ZoomOutExecution);
             ResetView = new DelegateCommand(ResetViewExecution);
             ToggleStart = new DelegateCommand(ToggleStartExecution);
+            ToggleSpeed = new DelegateCommand(ToggleSpeedExecution);
             ToggleNode = new PositioningCommand(ToggleNodeExecution);
             var width = 800;
-            var factor = 10;
+            var factor = 1;
             _nodes = new NodeDto[width / factor, width / factor];
             _image = new GridBitmapWrapper(_resolution, width, width);
+        }
+
+        private void ToggleSpeedExecution()
+        {
+            switch (_speed)
+            {
+                case ESpeed.Normal:
+                    _speed = ESpeed.Fast;
+                    break;
+                case ESpeed.Fast:
+                    _speed = ESpeed.Faster;
+                    break;
+                case ESpeed.Faster:
+                    _speed = ESpeed.Normal;
+                    break;
+            }
+            RaisePropertyChanged(nameof(SpeedLabel));
         }
 
         private void ToggleStartExecution()
@@ -82,6 +102,7 @@ namespace GameOfLife.UI
                         tempArray[row,column] = IsAlive(row,column);
                     });
                 });
+                var counter = 0;
                 Parallel.For(0, _nodes.GetLength(0), row =>
                 {
                     Parallel.For(0, _nodes.GetLength(1), column =>
@@ -96,20 +117,24 @@ namespace GameOfLife.UI
                             {
                                 _nodes[row, column].IsAlive = tempArray[row, column];
                             }
-                            Application.Current.Dispatcher.Invoke(() =>
+                            if (tempArray[row, column])
                             {
-                                if (tempArray[row, column])
+                                Interlocked.Increment(ref counter);
+                                Application.Current.Dispatcher.InvokeAsync(() =>
                                 {
                                     _image.DrawCell(row * _resolution, column * _resolution, Colors.CadetBlue);
-                                    AliveCount++;
-                                }
-                                else
+                                });
+                            }
+                            else
+                            {
+                                Interlocked.Decrement(ref counter);
+                                Application.Current.Dispatcher.InvokeAsync(() =>
                                 {
                                     _image.DrawCell(row * _resolution, column * _resolution, Colors.White);
-                                    AliveCount--;
-                                }
-                            });
-                        }
+                                });
+                            }
+
+                       }
                     });
                 });
 
@@ -119,7 +144,20 @@ namespace GameOfLife.UI
                     GenerationCount++;
                     Duration = (int) sw.ElapsedMilliseconds;
                 });
-                await Task.Delay((int) Math.Max(0,100-sw.ElapsedMilliseconds));
+                var maxTime = 0;
+                switch (_speed)
+                {
+                    case ESpeed.Normal:
+                        maxTime = 100;
+                        break;
+                    case ESpeed.Fast:
+                        maxTime = 50;
+                        break;
+                    case ESpeed.Faster:
+                        maxTime = 0;
+                        break;
+                }
+                await Task.Delay((int) Math.Max(0, maxTime - sw.ElapsedMilliseconds));
             }
         }
 
@@ -233,10 +271,33 @@ namespace GameOfLife.UI
             get => _startLabel;
             set => SetProperty(ref _startLabel, value);
         }
+        public string SpeedLabel
+        {
+            get
+            {
+                switch (_speed)
+                {
+                    case ESpeed.Normal:
+                        return ">";
+                    case ESpeed.Fast:
+                        return ">>";
+                    case ESpeed.Faster:
+                        return ">>>";
+                }
+
+                return "?";
+            }
+        }
+
         public Visibility ResetVisibility
         {
             get => _resetVisibility;
             set => SetProperty(ref _resetVisibility, value);
         }
+    }
+
+    public enum ESpeed
+    {
+        Normal,Fast,Faster
     }
 }

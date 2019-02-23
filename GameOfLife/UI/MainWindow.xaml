@@ -11,6 +11,7 @@
         </Window.DataContext>
     <DockPanel>
         <DockPanel DockPanel.Dock="Top">
+            <Button Command="{Binding ToggleSpeed}" Content="{Binding SpeedLabel}"/>
             <Button Command="{Binding ZoomIn}">+</Button>
             <Button Command="{Binding ZoomOut}">-</Button>
             <Button Command="{Binding ResetView}" DockPanel.Dock="Right" Background="{StaticResource SecondaryAccentBrush}" Foreground="{StaticResource SecondaryAccentForegroundBrush}" Visibility="{Binding ResetVisibility}">Reset</Button>
