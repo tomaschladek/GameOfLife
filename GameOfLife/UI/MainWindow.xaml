@@ -11,10 +11,10 @@
         </Window.DataContext>
     <DockPanel>
         <DockPanel DockPanel.Dock="Top">
-            <Button Command="{Binding ToggleSpeed}" Content="{Binding SpeedLabel}"/>
+            <Button Command="{Binding ToggleSpeed}" Content="{Binding SpeedLabel}" Margin="0 0 10 0"/>
             <Button Command="{Binding ZoomIn}">+</Button>
             <Button Command="{Binding ZoomOut}">-</Button>
-            <Button Command="{Binding ResetView}" DockPanel.Dock="Right" Background="{StaticResource SecondaryAccentBrush}" Foreground="{StaticResource SecondaryAccentForegroundBrush}" Visibility="{Binding ResetVisibility}">Reset</Button>
+            <Button Command="{Binding ResetView}"  Margin="10 0 0 0" DockPanel.Dock="Right" Background="{StaticResource SecondaryAccentBrush}" Foreground="{StaticResource SecondaryAccentForegroundBrush}" Visibility="{Binding ResetVisibility}">Reset</Button>
             <Button Command="{Binding ToggleStart}" DockPanel.Dock="Right" Content="{Binding StartLabel}"/>
             <Label ContentStringFormat=" {0}x" Content="{Binding Zoom}"/>
         </DockPanel>

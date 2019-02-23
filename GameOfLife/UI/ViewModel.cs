@@ -41,7 +41,14 @@ namespace GameOfLife.UI
         {
             ZoomIn = new DelegateCommand(ZoomInExecution);
             ZoomOut = new DelegateCommand(ZoomOutExecution);
-            ResetView = new DelegateCommand(ResetViewExecution);
+            ResetView = new DelegateCommand(() =>
+            {
+                if (_isRunning)
+                {
+                    ToggleStartExecution();
+                }
+                ResetViewExecution();
+            });
             ToggleStart = new DelegateCommand(ToggleStartExecution);
             ToggleSpeed = new DelegateCommand(ToggleSpeedExecution);
             ToggleNode = new PositioningCommand(ToggleNodeExecution);
@@ -104,7 +111,7 @@ namespace GameOfLife.UI
                     AliveCount += result.CounterDif;
                 });
 
-
+                conflictNodes = result.ConflictSet;
                 sw.Stop();
                 Application.Current.Dispatcher.Invoke(() =>
                 {
@@ -130,7 +137,6 @@ namespace GameOfLife.UI
         private void ResetViewExecution()
         {
             ResetVisibility = Visibility.Collapsed;
-            RaisePropertyChanged(nameof(Source));
             StartLabel = "Start";
 
             var width = 800;
@@ -138,7 +144,10 @@ namespace GameOfLife.UI
             _processor = new GenerationProcessor(width / factor);
             _nodes = new BitarrayWrapper(width/factor, width / factor);
             _image = new GridBitmapWrapper(_resolution, width, width);
+            GenerationCount = 0;
+            AliveCount = 0;
 
+            RaisePropertyChanged(nameof(Source));
         }
 
         private void ToggleNodeExecution(Point point)

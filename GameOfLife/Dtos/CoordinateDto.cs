@@ -2,12 +2,14 @@
 {
     public class CoordinateDto
     {
+        public int Index { get; }
         public int Column { get; }
         public int Row { get; }
         public bool IsAlive { get; set; }
 
-        public CoordinateDto(int row, int column, bool isAlive)
+        public CoordinateDto(int index, int row, int column, bool isAlive)
         {
+            Index = index;
             Column = column;
             Row = row;
             IsAlive = isAlive;

@@ -121,9 +121,8 @@ namespace GameOfLife.Dtos
         {
             for (var index = 0; index < nodes.Length; index++)
             {
-                var row = index / Width * Resolution;
-                var column = index % Width * Resolution;
-                DrawCell(row * Resolution, column * Resolution, nodes[index] ? Colors.CadetBlue : Colors.White);
+                var coordinates = nodes.GetCoordinates(index);
+                DrawCell(coordinates.Row * Resolution, coordinates.Column * Resolution, nodes[index] ? Colors.CadetBlue : Colors.White);
             }
         }
     }

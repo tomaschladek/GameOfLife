@@ -1,5 +1,6 @@
-﻿using System.Collections;
-using System.Collections.Concurrent;
+﻿using System.Collections.Concurrent;
+using System.Collections.Generic;
+using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
 using GameOfLife.Dtos;
@@ -15,23 +16,21 @@ namespace GameOfLife.Services
             _tempArray = new bool[size,size];
         }
 
-        public (ConcurrentBag<CoordinateDto> ChangedPositions, int CounterDif) Execute(BitarrayWrapper nodes, int resolution, ConcurrentBag<CoordinateDto> setOfInterest)
+        public (ConcurrentBag<CoordinateDto> ChangedPositions, int CounterDif, ConcurrentBag<CoordinateDto> ConflictSet) Execute(BitarrayWrapper nodes, int resolution, ConcurrentBag<CoordinateDto> setOfInterest)
         {
             var changedPositions = new ConcurrentBag<CoordinateDto>();
-            Parallel.For(0, nodes.Length,
-                index =>
+            Parallel.ForEach(setOfInterest,
+                coordinates =>
                 {
-                    var coordinates = nodes.GetCoordinates(index);
-                    _tempArray[coordinates.Row, coordinates.Column] = IsAlive(index, coordinates.Row, coordinates.Column, nodes); 
+                    _tempArray[coordinates.Row, coordinates.Column] = IsAlive(coordinates.Index, coordinates.Row, coordinates.Column, nodes); 
                 });
             var counter = 0;
-            Parallel.For(0, nodes.Length,
-                index => 
+            Parallel.ForEach(setOfInterest,
+                coordinates =>
                 {
-                    var coordinates = nodes.GetCoordinates(index);
-                    if (_tempArray[coordinates.Row, coordinates.Column] != nodes[index])
+                    if (_tempArray[coordinates.Row, coordinates.Column] != nodes[coordinates.Index])
                     {
-                        nodes[index] =_tempArray[coordinates.Row, coordinates.Column];
+                        nodes[coordinates.Index] =_tempArray[coordinates.Row, coordinates.Column];
 
                         if (_tempArray[coordinates.Row, coordinates.Column])
                         {
@@ -42,10 +41,11 @@ namespace GameOfLife.Services
                             Interlocked.Decrement(ref counter);
                         }
 
-                        changedPositions.Add(new CoordinateDto(coordinates.Row * resolution, coordinates.Column * resolution, _tempArray[coordinates.Row, coordinates.Column]));
+                        changedPositions.Add(new CoordinateDto(coordinates.Index,coordinates.Row * resolution, coordinates.Column * resolution, _tempArray[coordinates.Row, coordinates.Column]));
                     }
             });
-            return (changedPositions, counter);
+            var newConflictSet = CreateConflictSet(nodes,changedPositions.Union(setOfInterest));
+            return (changedPositions, counter, newConflictSet);
         }
 
         private bool IsAlive(int index, int row, int column, BitarrayWrapper nodes)
@@ -83,15 +83,42 @@ namespace GameOfLife.Services
         public ConcurrentBag<CoordinateDto> CreateConflictSet(BitarrayWrapper nodes)
         {
             var coordinateDtos = new ConcurrentBag<CoordinateDto>();
-            //for (var index = 0; index < nodes.Length; index++)
-            //{
-            //    bool node = nodes[index];
-            //    var row = nodes.GetRow(index);
-            //    var column = nodes.GetColumn(index);
-            //    coordinateDtos.Add(new CoordinateDto(row,column,node));
-            //}
+            for (var index = 0; index < nodes.Length; index++)
+            {
+                AddToCollection(nodes, coordinateDtos, index);
+            }
 
             return coordinateDtos;
+        }
+
+        private ConcurrentBag<CoordinateDto> CreateConflictSet(BitarrayWrapper nodes, IEnumerable<CoordinateDto> originals)
+        {
+            var coordinateDtos = new ConcurrentBag<CoordinateDto>();
+            foreach (var original in originals)
+            {
+                AddToCollection(nodes,coordinateDtos,original.Index);
+            }
+            for (var index = 0; index < nodes.Length; index++)
+            {
+                AddToCollection(nodes, coordinateDtos, index);
+            }
+
+            return coordinateDtos;
+        }
+
+        private static void AddToCollection(BitarrayWrapper nodes, ConcurrentBag<CoordinateDto> coordinateDtos, int index)
+        {
+            if (nodes[index])
+            {
+                for (int rowShift = -1; rowShift < 2; rowShift++)
+                    for (int columnShift = -1; columnShift < 2; columnShift++)
+                    {
+                        var newIndex = index + rowShift * nodes.Width + columnShift;
+                        if (newIndex < 0 || newIndex > nodes.Length) continue;
+                        var coordinates = nodes.GetCoordinates(newIndex);
+                        coordinateDtos.Add(new CoordinateDto(coordinates.Index, coordinates.Row, coordinates.Column, nodes[newIndex]));
+                    }
+            }
         }
     }
 }

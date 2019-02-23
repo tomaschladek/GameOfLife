@@ -11,7 +11,7 @@ namespace GameOfLife.Dtos
 
         public BitarrayWrapper(int width, int height)
         {
-            Source = new BitArray(width);
+            Source = new BitArray(width*height);
             Width = width;
             Height = height;
         }
@@ -20,7 +20,7 @@ namespace GameOfLife.Dtos
         {
             var row = index / Width;
             var column = index - row * Width;
-            return new CoordinateDto(row, column, false);
+            return new CoordinateDto(index, row, column, false);
         }
 
         private int GetCellIndex(int row, int column)
