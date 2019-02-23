@@ -10,18 +10,20 @@
             <ui:ViewModel/>
         </Window.DataContext>
     <DockPanel>
-        <StackPanel DockPanel.Dock="Top" Orientation="Horizontal">
+        <DockPanel DockPanel.Dock="Top">
             <Button Command="{Binding ZoomIn}">+</Button>
             <Button Command="{Binding ZoomOut}">-</Button>
+            <Button Command="{Binding ResetView}" DockPanel.Dock="Right" Background="{StaticResource SecondaryAccentBrush}" Foreground="{StaticResource SecondaryAccentForegroundBrush}" Visibility="{Binding ResetVisibility}">Reset</Button>
+            <Button Command="{Binding ToggleStart}" DockPanel.Dock="Right" Content="{Binding StartLabel}"/>
             <Label ContentStringFormat=" {0}x" Content="{Binding Zoom}"/>
-        </StackPanel>
+        </DockPanel>
         <StackPanel DockPanel.Dock="Bottom" Orientation="Horizontal">
             <Label>Alive</Label>
-            <Label>9</Label>
+            <Label Content="{Binding AliveCount}"/>
             <Label>Generation</Label>
-            <Label>0</Label>
+            <Label Content="{Binding GenerationCount}"/>
             <Label>Duration</Label>
-            <Label>100ms</Label>
+            <Label Content="{Binding Duration}" ContentStringFormat=" {0}ms"/>
         </StackPanel>
         <Image x:Name="MyImage" Stretch="None" VerticalAlignment="Center" HorizontalAlignment="Center" Source="{Binding Source}">
             <Image.InputBindings>

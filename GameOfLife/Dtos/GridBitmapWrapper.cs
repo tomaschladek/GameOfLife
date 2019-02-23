@@ -14,6 +14,8 @@ namespace GameOfLife.Dtos
         public int Width { get; }
         public int Height { get; }
 
+        private const int LineThicknes = 1;
+
         public GridBitmapWrapper(int resolution, int width, int height)
         {
             Resolution = resolution;
@@ -33,14 +35,13 @@ namespace GameOfLife.Dtos
         private void DrawLines()
         {
             var color = Colors.AliceBlue;
-            var lineThicknes = 1;
             for (var row = 0; row < Width/Resolution; row++)
             {
-                DrawPixelsArea(color, 0, Width, row*Resolution, row * Resolution + lineThicknes);
+                DrawPixelsArea(color, 0, Width, row*Resolution, row * Resolution + LineThicknes);
             }
             for (var column = 0; column < Width/Resolution; column++)
             {
-                DrawPixelsArea(color, column*Resolution, column * Resolution + lineThicknes, 0, Height);
+                DrawPixelsArea(color, column*Resolution, column * Resolution + LineThicknes, 0, Height);
             }
         }
 
@@ -56,7 +57,8 @@ namespace GameOfLife.Dtos
             var columnStart = x / Resolution * Resolution;
             var rowStart = y / Resolution * Resolution;
 
-            DrawPixelsArea(color, columnStart, Math.Min(Width-1,columnStart+Resolution), rowStart, Math.Min(Height-1,rowStart+Resolution));
+
+            DrawPixelsArea(color, columnStart+ LineThicknes, Math.Min(Width-1,columnStart+Resolution), rowStart + LineThicknes, Math.Min(Height-1,rowStart+Resolution));
         }
 
         private void DrawPixelsArea(Color color, int fromColumn, int toColumn, int fromRow, int toRow)
