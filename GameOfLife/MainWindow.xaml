@@ -1,0 +1,28 @@
+﻿<Window x:Class="GameOfLife.MainWindow"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+        xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+        xmlns:local="clr-namespace:GameOfLife"
+        mc:Ignorable="d"
+        Title="MainWindow" WindowState="Maximized">
+        <Window.DataContext>
+            <local:ViewModel/>
+        </Window.DataContext>
+    <DockPanel>
+        <StackPanel DockPanel.Dock="Top" Orientation="Horizontal">
+            <Button Command="{Binding ZoomIn}">+</Button>
+            <Button Command="{Binding ZoomOut}">-</Button>
+            <Label ContentStringFormat=" {0}x" Content="{Binding Zoom}"/>
+        </StackPanel>
+        <StackPanel DockPanel.Dock="Bottom" Orientation="Horizontal">
+            <Label>Alive</Label>
+            <Label>9</Label>
+            <Label>Generation</Label>
+            <Label>0</Label>
+            <Label>Duration</Label>
+            <Label MouseDown="UIElement_OnMouseDown">100ms</Label>
+        </StackPanel>
+        <Image x:Name="MyImage" Stretch="None" VerticalAlignment="Center" HorizontalAlignment="Center"/>
+    </DockPanel>
+</Window>
