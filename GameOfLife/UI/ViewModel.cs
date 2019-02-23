@@ -1,13 +1,14 @@
 ﻿using System;
-using System.Collections.Generic;
+using System.Globalization;
 using System.Windows;
 using System.Windows.Input;
 using System.Windows.Media;
 using System.Windows.Media.Imaging;
+using GameOfLife.Dtos;
 using Prism.Commands;
 using Prism.Mvvm;
 
-namespace GameOfLife
+namespace GameOfLife.UI
 {
     public class ViewModel : BindableBase
     {
@@ -17,20 +18,38 @@ namespace GameOfLife
         public ICommand ZoomIn { get; set; }
         public ICommand ZoomOut { get; set; }
         public ICommand ToggleNode { get; set; }
-        private ISet<NodeDto> _nodes = new HashSet<NodeDto>();
-        private GridBitmap _image;
+        private NodeDto[,] _nodes;
+        private GridBitmapWrapper _image;
 
         public ViewModel()
         {
             ZoomIn = new DelegateCommand(ZoomInExecution);
             ZoomOut = new DelegateCommand(ZoomOutExecution);
             ToggleNode = new PositioningCommand(ToggleNodeExecution);
-            _image = new GridBitmap(_resolution);
+            var width = 1000;
+            _nodes = new NodeDto[width,width];
+            _image = new GridBitmapWrapper(_resolution);
         }
 
         private void ToggleNodeExecution(Point point)
         {
-            _image.DrawPixels((int) point.X,(int) point.Y,Colors.White);
+            var x = (int) point.X/_resolution * _resolution;
+            var y = (int) point.Y / _resolution * _resolution;
+            if (_nodes[x, y] == null)
+            {
+                _image.DrawCell(x, y, Colors.CadetBlue);
+                _nodes[x, y] = new NodeDto(true);
+            }
+            else if (_nodes[x, y].IsAlive)
+            {
+                _image.DrawCell(x, y, Colors.White);
+                _nodes[x, y].IsAlive = false;
+            }
+            else
+            {
+                _image.DrawCell(x, y, Colors.CadetBlue);
+                _nodes[x, y].IsAlive = true;
+            }
         }
 
         private void ZoomInExecution()
@@ -43,7 +62,7 @@ namespace GameOfLife
         {
             SetProperty(ref _resolution, newResolution);
             RaisePropertyChanged(nameof(Zoom));
-            _image.Resolution = newResolution;
+            _image.ChangeResolution(_nodes,newResolution);
         }
 
         private void ZoomOutExecution()
@@ -52,54 +71,11 @@ namespace GameOfLife
             SetResolution(newResolution);
         }
 
-        public string Zoom => Math.Round(Math.Log(_resolution,2)).ToString();
+        public string Zoom => Math.Round(Math.Log(_resolution,2)).ToString(CultureInfo.InvariantCulture);
 
         public WriteableBitmap Source
         {
             get => _image.Source;
         }
-    }
-
-    public class NodeDto
-    {
-        public PositionDto X { get; set; }
-        public bool IsAlive { get; set; }
-
-        public NodeDto(PositionDto x, bool isAlive)
-        {
-            X = x;
-            IsAlive = isAlive;
-        }
-    }
-
-    public class PositionDto
-    {
-        public int X { get; set; }
-        public int Y { get; set; }
-
-        public PositionDto(int x, int y)
-        {
-            X = x;
-            Y = y;
-        }
-    }
-    public class PositioningCommand : ICommand
-    {
-        private readonly Action<Point> _execution;
-
-        public PositioningCommand(Action<Point> execution)
-        {
-            _execution = execution;
-        }
-
-        public void Execute(object parameter)
-        {
-            Point mousePos = Mouse.GetPosition((IInputElement)parameter);
-            _execution(mousePos);
-        }
-
-        public bool CanExecute(object parameter) { return true; }
-
-        public event EventHandler CanExecuteChanged;
     }
 }
