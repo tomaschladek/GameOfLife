@@ -77,6 +77,7 @@
       <Generator>MSBuild:Compile</Generator>
       <SubType>Designer</SubType>
     </ApplicationDefinition>
+    <Compile Include="Dtos\BitarrayWrapper.cs" />
     <Compile Include="Dtos\CoordinateDto.cs" />
     <Compile Include="Dtos\GridBitmapWrapper.cs" />
     <Compile Include="Dtos\NodeDto.cs" />

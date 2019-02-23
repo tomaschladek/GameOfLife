@@ -25,7 +25,7 @@ namespace GameOfLife.UI
         public ICommand ToggleStart { get; set; }
         public ICommand ResetView { get; set; }
         public ICommand ToggleSpeed { get; set; }
-        private NodeDto[,] _nodes;
+        private BitarrayWrapper _nodes;
         private GridBitmapWrapper _image;
         private int _aliveCount;
         private int _duration;
@@ -45,11 +45,7 @@ namespace GameOfLife.UI
             ToggleStart = new DelegateCommand(ToggleStartExecution);
             ToggleSpeed = new DelegateCommand(ToggleSpeedExecution);
             ToggleNode = new PositioningCommand(ToggleNodeExecution);
-            var width = 800;
-            var factor = 1;
-            _nodes = new NodeDto[width / factor, width / factor];
-            _image = new GridBitmapWrapper(_resolution, width, width);
-            _processor = new GenerationProcessor(width/factor);
+            ResetViewExecution();
         }
 
         private void ToggleSpeedExecution()
@@ -92,16 +88,17 @@ namespace GameOfLife.UI
         private async void RunGenerations()
         {
             var sw = new Stopwatch();
+            var conflictNodes = _processor.CreateConflictSet(_nodes);
             while (!_token.IsCancellationRequested)
             {
                 sw.Restart();
 
-                var result = _processor.Execute(_nodes, _resolution);
+                var result = _processor.Execute(_nodes, _resolution, conflictNodes);
                 Application.Current.Dispatcher.Invoke(() =>
                 {
                     foreach (var position in result.ChangedPositions)
                     {
-                        _image.DrawCell(position.X, position.Y, position.IsAlive ? Colors.CadetBlue : Colors.White);
+                        _image.DrawCell(position.Column, position.Row, position.IsAlive ? Colors.CadetBlue : Colors.White);
                     }
 
                     AliveCount += result.CounterDif;
@@ -132,37 +129,35 @@ namespace GameOfLife.UI
 
         private void ResetViewExecution()
         {
-            var width = 800;
-            _nodes = new NodeDto[width, width];
-            _image = new GridBitmapWrapper(_resolution, width, width);
             ResetVisibility = Visibility.Collapsed;
             RaisePropertyChanged(nameof(Source));
             StartLabel = "Start";
+
+            var width = 800;
+            var factor = 1;
+            _processor = new GenerationProcessor(width / factor);
+            _nodes = new BitarrayWrapper(width/factor, width / factor);
+            _image = new GridBitmapWrapper(_resolution, width, width);
+
         }
 
         private void ToggleNodeExecution(Point point)
         {
-            var xIndex = (int) point.X/_resolution;
-            var yIndex = (int) point.Y / _resolution;
-            var xCoordinate = xIndex * _resolution;
-            var yCoordinate = yIndex * _resolution;
-            if (_nodes[xIndex, yIndex] == null)
+            var column = (int) point.X/_resolution;
+            var row = (int) point.Y / _resolution;
+            var xCoordinate = column * _resolution;
+            var yCoordinate = row * _resolution;
+            if (!_nodes[row,column])
             {
                 _image.DrawCell(xCoordinate, yCoordinate, Colors.CadetBlue);
-                _nodes[xIndex, yIndex] = new NodeDto(true);
+                _nodes[row,column] = true;
                 AliveCount++;
             }
-            else if (_nodes[xIndex, yIndex].IsAlive)
+            else 
             {
                 _image.DrawCell(xCoordinate, yCoordinate, Colors.White);
-                _nodes[xIndex, yIndex].IsAlive = false;
+                _nodes[row, column] = false;
                 AliveCount--;
-            }
-            else
-            {
-                _image.DrawCell(xCoordinate, yCoordinate, Colors.CadetBlue);
-                _nodes[xIndex, yIndex].IsAlive = true;
-                AliveCount++;
             }
         }
 

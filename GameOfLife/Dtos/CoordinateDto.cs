@@ -2,14 +2,14 @@
 {
     public class CoordinateDto
     {
-        public int X { get; }
-        public int Y { get; }
+        public int Column { get; }
+        public int Row { get; }
         public bool IsAlive { get; set; }
 
-        public CoordinateDto(int x, int y, bool isAlive)
+        public CoordinateDto(int row, int column, bool isAlive)
         {
-            X = x;
-            Y = y;
+            Column = column;
+            Row = row;
             IsAlive = isAlive;
         }
 
@@ -17,15 +17,15 @@
         {
             var dto = obj as CoordinateDto;
             return dto != null &&
-                   X == dto.X &&
-                   Y == dto.Y;
+                   Column == dto.Column &&
+                   Row == dto.Row;
         }
 
         public override int GetHashCode()
         {
             var hashCode = 1861411795;
-            hashCode = hashCode * -1521134295 + X.GetHashCode();
-            hashCode = hashCode * -1521134295 + Y.GetHashCode();
+            hashCode = hashCode * -1521134295 + Column.GetHashCode();
+            hashCode = hashCode * -1521134295 + Row.GetHashCode();
             return hashCode;
         }
     }

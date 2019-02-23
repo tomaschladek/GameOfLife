@@ -110,20 +110,20 @@ namespace GameOfLife.Dtos
             Source.AddDirtyRect(new Int32Rect(column, row, 1, 1));
         }
 
-        public void ChangeResolution(NodeDto[,] nodes, int resolution)
+        public void ChangeResolution(BitarrayWrapper nodes, int resolution)
         {
             Resolution = resolution;
             DrawAll(Colors.White);
             RedrawImage(nodes);
             DrawLines();
         }
-        private void RedrawImage(NodeDto[,] nodes)
+        private void RedrawImage(BitarrayWrapper nodes)
         {
-            for (var row = 0; row < nodes.GetLength(0) && (row +1) * Resolution < Width; row++)
-            for (var column = 0; column < nodes.GetLength(1) && (column+1) * Resolution < Height; column++)
+            for (var index = 0; index < nodes.Length; index++)
             {
-                var node = nodes[row, column];
-                DrawCell(row*Resolution,column*Resolution, node?.IsAlive == true ? Colors.CadetBlue : Colors.White);
+                var row = index / Width * Resolution;
+                var column = index % Width * Resolution;
+                DrawCell(row*Resolution,column*Resolution, nodes[index] ? Colors.CadetBlue : Colors.White);
             }
         }
     }
