@@ -1,4 +1,5 @@
-﻿using System.Windows;
+﻿using System;
+using System.Windows;
 using System.Windows.Media;
 using System.Windows.Media.Imaging;
 
@@ -13,11 +14,11 @@ namespace GameOfLife.Dtos
         public int Width { get; }
         public int Height { get; }
 
-        public GridBitmapWrapper(int resolution)
+        public GridBitmapWrapper(int resolution, int width, int height)
         {
             Resolution = resolution;
-            Width = 1000;
-            Height = 1000;
+            Width = width;
+            Height = height;
             Source = new WriteableBitmap(
                 Width,
                 Height,
@@ -55,7 +56,7 @@ namespace GameOfLife.Dtos
             var columnStart = x / Resolution * Resolution;
             var rowStart = y / Resolution * Resolution;
 
-            DrawPixelsArea(color, columnStart, columnStart+Resolution, rowStart, rowStart+Resolution);
+            DrawPixelsArea(color, columnStart, Math.Min(Width-1,columnStart+Resolution), rowStart, Math.Min(Height-1,rowStart+Resolution));
         }
 
         private void DrawPixelsArea(Color color, int fromColumn, int toColumn, int fromRow, int toRow)
@@ -116,8 +117,8 @@ namespace GameOfLife.Dtos
         }
         private void RedrawImage(NodeDto[,] nodes)
         {
-            for (var row = 0; row < nodes.GetLength(0) && row * (Resolution+1) < Width; row++)
-            for (var column = 0; column < nodes.GetLength(1) && column * (Resolution + 1) < Height; column++)
+            for (var row = 0; row < nodes.GetLength(0) && (row +1) * Resolution < Width; row++)
+            for (var column = 0; column < nodes.GetLength(1) && (column+1) * Resolution < Height; column++)
             {
                 var node = nodes[row, column];
                 DrawCell(row*Resolution,column*Resolution, node?.IsAlive == true ? Colors.CadetBlue : Colors.White);

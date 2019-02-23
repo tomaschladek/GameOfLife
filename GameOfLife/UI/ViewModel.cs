@@ -12,9 +12,9 @@ namespace GameOfLife.UI
 {
     public class ViewModel : BindableBase
     {
-        private int _resolution = 8;
-        private const int MaxResolution = 32;
-        private const int MinResolution = 2;
+        private int _resolution = 32;
+        private const int MaxResolution = 128;
+        private const int MinResolution = 4;
         public ICommand ZoomIn { get; set; }
         public ICommand ZoomOut { get; set; }
         public ICommand ToggleNode { get; set; }
@@ -27,28 +27,30 @@ namespace GameOfLife.UI
             ZoomOut = new DelegateCommand(ZoomOutExecution);
             ToggleNode = new PositioningCommand(ToggleNodeExecution);
             var width = 1000;
-            _nodes = new NodeDto[width,width];
-            _image = new GridBitmapWrapper(_resolution);
+            _nodes = new NodeDto[width/10,width/10];
+            _image = new GridBitmapWrapper(_resolution, 1000, 1000);
         }
 
         private void ToggleNodeExecution(Point point)
         {
-            var x = (int) point.X/_resolution * _resolution;
-            var y = (int) point.Y / _resolution * _resolution;
-            if (_nodes[x, y] == null)
+            var xIndex = (int) point.X/_resolution;
+            var yIndex = (int) point.Y / _resolution;
+            var xCoordinate = xIndex * _resolution;
+            var yCoordinate = yIndex * _resolution;
+            if (_nodes[xIndex, yIndex] == null)
             {
-                _image.DrawCell(x, y, Colors.CadetBlue);
-                _nodes[x, y] = new NodeDto(true);
+                _image.DrawCell(xCoordinate, yCoordinate, Colors.CadetBlue);
+                _nodes[xIndex, yIndex] = new NodeDto(true);
             }
-            else if (_nodes[x, y].IsAlive)
+            else if (_nodes[xIndex, yIndex].IsAlive)
             {
-                _image.DrawCell(x, y, Colors.White);
-                _nodes[x, y].IsAlive = false;
+                _image.DrawCell(xCoordinate, yCoordinate, Colors.White);
+                _nodes[xIndex, yIndex].IsAlive = false;
             }
             else
             {
-                _image.DrawCell(x, y, Colors.CadetBlue);
-                _nodes[x, y].IsAlive = true;
+                _image.DrawCell(xCoordinate, yCoordinate, Colors.CadetBlue);
+                _nodes[xIndex, yIndex].IsAlive = true;
             }
         }
 
