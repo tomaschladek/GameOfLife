@@ -52,10 +52,10 @@ namespace GameOfLife.Dtos
 
         // The DrawPixel method updates the WriteableBitmap by using
         // unsafe code to write a pixel into the back buffer.
-        internal void DrawCell(int x, int y, Color color)
+        internal void DrawCell(int row, int column, Color color)
         {
-            var columnStart = x / Resolution * Resolution;
-            var rowStart = y / Resolution * Resolution;
+            var columnStart = column / Resolution * Resolution;
+            var rowStart = row / Resolution * Resolution;
 
 
             DrawPixelsArea(color, columnStart+ LineThicknes, Math.Min(Width-1,columnStart+Resolution), rowStart + LineThicknes, Math.Min(Height-1,rowStart+Resolution));
@@ -123,7 +123,7 @@ namespace GameOfLife.Dtos
             {
                 var row = index / Width * Resolution;
                 var column = index % Width * Resolution;
-                DrawCell(row*Resolution,column*Resolution, nodes[index] ? Colors.CadetBlue : Colors.White);
+                DrawCell(row * Resolution, column * Resolution, nodes[index] ? Colors.CadetBlue : Colors.White);
             }
         }
     }

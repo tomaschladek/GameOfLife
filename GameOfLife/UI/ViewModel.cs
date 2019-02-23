@@ -98,7 +98,7 @@ namespace GameOfLife.UI
                 {
                     foreach (var position in result.ChangedPositions)
                     {
-                        _image.DrawCell(position.Column, position.Row, position.IsAlive ? Colors.CadetBlue : Colors.White);
+                        _image.DrawCell(position.Row, position.Column, position.IsAlive ? Colors.CadetBlue : Colors.White);
                     }
 
                     AliveCount += result.CounterDif;
@@ -145,17 +145,17 @@ namespace GameOfLife.UI
         {
             var column = (int) point.X/_resolution;
             var row = (int) point.Y / _resolution;
-            var xCoordinate = column * _resolution;
-            var yCoordinate = row * _resolution;
+            var columnCoordinate = column * _resolution;
+            var rowCoordinate = row * _resolution;
             if (!_nodes[row,column])
             {
-                _image.DrawCell(xCoordinate, yCoordinate, Colors.CadetBlue);
+                _image.DrawCell(rowCoordinate, columnCoordinate, Colors.CadetBlue);
                 _nodes[row,column] = true;
                 AliveCount++;
             }
             else 
             {
-                _image.DrawCell(xCoordinate, yCoordinate, Colors.White);
+                _image.DrawCell(rowCoordinate, columnCoordinate, Colors.White);
                 _nodes[row, column] = false;
                 AliveCount--;
             }
