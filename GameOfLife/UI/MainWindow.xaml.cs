@@ -1,4 +1,5 @@
-﻿using System.Windows.Media;
+﻿using System.Windows;
+using System.Windows.Media;
 
 namespace GameOfLife.UI
 {
@@ -13,6 +14,11 @@ namespace GameOfLife.UI
             InitializeComponent();
             RenderOptions.SetBitmapScalingMode(MyImage, BitmapScalingMode.NearestNeighbor);
             RenderOptions.SetEdgeMode(MyImage, EdgeMode.Aliased);
+        }
+
+        private void MainWindow_OnSizeChanged(object sender, SizeChangedEventArgs e)
+        {
+            ((ViewModel) DataContext).Resize.Execute(new Size(ImageHolder.ActualWidth, ImageHolder.ActualHeight));
         }
     }
 }

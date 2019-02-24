@@ -81,7 +81,7 @@
     <Compile Include="Dtos\NodeDto.cs" />
     <Compile Include="Dtos\GridBitmapWrapper.cs" />
     <Compile Include="Services\GenerationProcessor.cs" />
-    <Compile Include="UI\PositioningCommand.cs" />
+    <Compile Include="UI\MouseClickPointCommand.cs" />
     <Compile Include="UI\ViewModel.cs" />
     <Page Include="UI\MainWindow.xaml">
       <Generator>MSBuild:Compile</Generator>

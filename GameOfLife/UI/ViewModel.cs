@@ -24,6 +24,11 @@ namespace GameOfLife.UI
         public ICommand ToggleStart { get; set; }
         public ICommand ResetView { get; set; }
         public ICommand ToggleSpeed { get; set; }
+        public ICommand Resize { get; set; }
+        public ICommand BindingMoveUp { get; set; }
+        public ICommand BindingMoveDown { get; set; }
+        public ICommand BindingMoveLeft { get; set; }
+        public ICommand BindingMoveRight { get; set; }
         private BitarrayWrapper _nodes;
         private GridBitmapWrapper _image;
         private int _aliveCount;
@@ -32,9 +37,12 @@ namespace GameOfLife.UI
         private bool _isRunning;
         private CancellationTokenSource _token;
         private string _startLabel = "Start";
-        private ESpeed _speed = ESpeed.Normal;
+        private ESpeed _speed = ESpeed.Fast;
         private Visibility _resetVisibility = Visibility.Collapsed;
-        private GenerationProcessor _processor;
+        private readonly GenerationProcessor _processor;
+        private Size _imageSize = new Size(800,800);
+        private Point _spaceOffset = new Point(0,0);
+        private readonly Size _spaceSize = new Size(8000,8000);
 
         public ViewModel()
         {
@@ -50,8 +58,28 @@ namespace GameOfLife.UI
             });
             ToggleStart = new DelegateCommand(ToggleStartExecution);
             ToggleSpeed = new DelegateCommand(ToggleSpeedExecution);
-            ToggleNode = new PositioningCommand(ToggleNodeExecution);
+            BindingMoveUp = new DelegateCommand(() => MoveViewExecution(false,null));
+            BindingMoveDown = new DelegateCommand(() => MoveViewExecution(true,null));
+            BindingMoveLeft = new DelegateCommand(() => MoveViewExecution(null,false));
+            BindingMoveRight = new DelegateCommand(() => MoveViewExecution(null,true));
+            ToggleNode = new MouseClickPointCommand(ToggleNodeExecution);
+            Resize = new SizeCommand(ResizeExecution);
+
+            _processor = new GenerationProcessor((int) _spaceSize.Width, (int) _spaceSize.Height);
             ResetViewExecution();
+        }
+
+        private void MoveViewExecution(bool? isHorizontal, bool? isVertical)
+        {
+            
+        }
+
+        private void ResizeExecution(Size obj)
+        {
+            _imageSize.Width = (int) obj.Width;
+            _imageSize.Height = (int) obj.Height;
+            RecreateImage();
+            _image.RedrawImage(_nodes, _resolution);
         }
 
         private void ToggleSpeedExecution()
@@ -149,16 +177,16 @@ namespace GameOfLife.UI
         {
             ResetVisibility = Visibility.Collapsed;
             StartLabel = "Start";
-
-            var width = 800;
-            var height = 800;
-            var factor = 1;
-            _processor = new GenerationProcessor(width / factor, height / factor);
-            _nodes = new BitarrayWrapper(width/factor, height / factor);
-            _image = new GridBitmapWrapper(_resolution, width, height);
             GenerationCount = 0;
             AliveCount = 0;
+            _nodes = new BitarrayWrapper((int) _spaceSize.Width,(int) _spaceSize.Height);
 
+            RecreateImage();
+        }
+
+        private void RecreateImage()
+        {
+            _image = new GridBitmapWrapper(_resolution, (int) _imageSize.Width, (int) _imageSize.Height);
             RaisePropertyChanged(nameof(Source));
         }
 

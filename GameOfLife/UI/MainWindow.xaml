@@ -4,8 +4,9 @@
         xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
         xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
         xmlns:ui="clr-namespace:GameOfLife.UI"
+        xmlns:materialdesign="http://materialdesigninxaml.net/winfx/xaml/themes"
         mc:Ignorable="d"
-        Title="MainWindow" WindowState="Maximized">
+        Title="MainWindow" WindowState="Maximized" SizeChanged="MainWindow_OnSizeChanged">
         <Window.DataContext>
             <ui:ViewModel/>
         </Window.DataContext>
@@ -26,10 +27,33 @@
             <Label>Duration</Label>
             <Label Content="{Binding Duration}" ContentStringFormat=" {0}ms"/>
         </StackPanel>
-        <Image x:Name="MyImage" Stretch="None" VerticalAlignment="Center" HorizontalAlignment="Center" Source="{Binding Source}">
-            <Image.InputBindings>
-                <MouseBinding Command="{Binding ToggleNode}" MouseAction="LeftClick" CommandParameter="{Binding ElementName=MyImage}"></MouseBinding>
-            </Image.InputBindings>
-        </Image>
+        <DockPanel>
+            <DockPanel.Resources>
+                <Style x:Key="Slider" TargetType="Button">
+                    <Setter Property="Foreground" Value="{StaticResource PrimaryHueLightForegroundBrush}"/>
+                    <Setter Property="Background" Value="White"/>
+                    <Setter Property="BorderBrush" Value="Transparent"/>
+                </Style>
+            </DockPanel.Resources>
+            <Button DockPanel.Dock="Top" Style="{StaticResource Slider}" Command="{Binding BindingMoveUp}">
+                <materialdesign:PackIcon Kind="ChevronUpCircleOutline"/>
+            </Button>
+            <Button DockPanel.Dock="Bottom" Style="{StaticResource Slider}" Command="{Binding BindingMoveDown}">
+                <materialdesign:PackIcon Kind="ChevronDownCircleOutline"/>
+            </Button>
+            <Button DockPanel.Dock="Left" Style="{StaticResource Slider}" Height="Auto" Command="{Binding BindingMoveLeft}">
+                <materialdesign:PackIcon Kind="ChevronLeftCircleOutline"/>
+            </Button>
+            <Button DockPanel.Dock="Right" Style="{StaticResource Slider}" Height="Auto" Command="{Binding BindingMoveRight}">
+                <materialdesign:PackIcon Kind="ChevronRightCircleOutline"/>
+            </Button>
+            <StackPanel x:Name="ImageHolder">
+                <Image x:Name="MyImage" Stretch="None" VerticalAlignment="Center" HorizontalAlignment="Center" Source="{Binding Source}">
+                    <Image.InputBindings>
+                        <MouseBinding Command="{Binding ToggleNode}" MouseAction="LeftClick" CommandParameter="{Binding ElementName=MyImage}"></MouseBinding>
+                    </Image.InputBindings>
+                </Image>
+            </StackPanel>
+        </DockPanel>
     </DockPanel>
 </Window>
