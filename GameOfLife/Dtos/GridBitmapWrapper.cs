@@ -12,46 +12,48 @@ namespace GameOfLife.Dtos
 
         public int Resolution { get; set; }
 
-        public int Width { get; }
-        public int Height { get; }
+        public Size Size { get; }
 
         private const int LineThicknes = 1;
 
-        public GridBitmapWrapper(int resolution, int width, int height)
+        public GridBitmapWrapper(int resolution, Size size, Point offset)
         {
             Resolution = resolution;
-            Width = width;
-            Height = height;
+            Size = size;
             Source = new WriteableBitmap(
-                Width,
-                Height,
+                (int) Size.Width,
+                (int) Size.Height,
                 96,
                 96,
                 PixelFormats.Bgr32,
                 null);
             ClearImage();
-            DrawLines();
+            DrawLines(offset);
         }
 
-        private void DrawLines()
+        private void DrawLines(Point offset)
         {
             var color = Colors.AliceBlue;
-            for (var row = 0; row < Height/Resolution; row++)
+            var dominantColor = Colors.Aquamarine;
+
+            var shiftRow = (int) offset.Y % 5;
+            var shiftColumn = (int) offset.X % 5;
+            for (var row = 0; row < Size.Height/Resolution; row++)
             {
-                DrawPixelsArea(color, 0, Width, row*Resolution, row * Resolution + LineThicknes);
+                DrawPixelsArea((row + shiftRow) % 5 != 0 ? color : dominantColor, 0, (int) Size.Width, row*Resolution, row * Resolution + LineThicknes);
             }
-            for (var column = 0; column < Width/Resolution; column++)
+            for (var column = 0; column < Size.Width /Resolution; column++)
             {
-                DrawPixelsArea(color, column*Resolution, column * Resolution + LineThicknes, 0, Height);
+                DrawPixelsArea((column + shiftColumn) % 5 != 0 ? color : dominantColor, column*Resolution, column * Resolution + LineThicknes, 0, (int) Size.Height);
             }
         }
 
         private void ClearImage()
         {
-            DrawPixelsArea(Colors.White, 0, Width, 0, Height);
+            DrawPixelsArea(Colors.White, 0, (int) Size.Width, 0, (int) Size.Height);
         }
 
-        internal void DrawCell(int row, int column, bool isAlive)
+        void DrawCell(int row, int column, bool isAlive)
         {
             var columnStart = column / Resolution * Resolution;
             var rowStart = row / Resolution * Resolution;
@@ -60,19 +62,25 @@ namespace GameOfLife.Dtos
             DrawPixelsArea(color, columnStart+ LineThicknes, columnStart+Resolution, rowStart + LineThicknes, rowStart+Resolution);
         }
 
+
+        internal void DrawCellWithCoordinates(int row, int column, bool isAlive, Point offset)
+        {
+            DrawCell((int)(row - offset.Y * Resolution), (int)(column - offset.X * Resolution), isAlive);
+        }
+
         private void DrawPixelsArea(Color color, int fromColumn, int toColumn, int fromRow, int toRow)
         {
-            if (fromColumn > Width || fromColumn < 0 || fromRow < 0 || fromRow > Height) return;
+            if (fromColumn > Size.Width || fromColumn < 0 || fromRow < 0 || fromRow > Size.Height) return;
 
             try
             {
                 // Reserve the back buffer for updates.
                 Source.Lock();
 
-                var width = Math.Min(Width, toColumn) - fromColumn;
-                var height = Math.Min(Height, toRow) - fromRow;
+                var width = (int) Math.Min(Size.Width, toColumn) - fromColumn;
+                var height = (int)Math.Min(Size.Height, toRow) - fromRow;
 
-                int stride = width * 4;
+                var stride = width * 4;
                 var pixels = Enumerable
                     .Repeat(new []{ color.B, color.G, color.R, color.A }, height * stride/4)
                     .SelectMany(item => item)
@@ -86,22 +94,22 @@ namespace GameOfLife.Dtos
             }
         }
 
-        public void RedrawImage(BitarrayWrapper nodes, int resolution)
+        public void RedrawImage(BitarrayWrapper nodes, int resolution, Point spaceOffset)
         {
             Resolution = resolution;
             ClearImage();
-            DrawImage(nodes);
-            DrawLines();
+            DrawImage(nodes, spaceOffset);
+            DrawLines(spaceOffset);
         }
 
-        private void DrawImage(BitarrayWrapper nodes)
+        private void DrawImage(BitarrayWrapper nodes, Point spaceOffset)
         {
             for (var index = 0; index < nodes.Length; index++)
             {
                 if (nodes[index])
                 {
                     var coordinates = nodes.GetCoordinates(index);
-                    DrawCell(coordinates.Row * Resolution, coordinates.Column * Resolution, true);
+                    DrawCell((int) (coordinates.Row * Resolution - spaceOffset.Y* Resolution), (int) (coordinates.Column * Resolution - spaceOffset.X* Resolution), true);
                 }
             }
         }

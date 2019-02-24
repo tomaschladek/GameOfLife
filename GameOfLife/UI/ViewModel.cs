@@ -4,6 +4,7 @@ using System.Globalization;
 using System.Threading;
 using System.Threading.Tasks;
 using System.Windows;
+using System.Windows.Controls;
 using System.Windows.Input;
 using System.Windows.Media.Imaging;
 using GameOfLife.Dtos;
@@ -58,10 +59,10 @@ namespace GameOfLife.UI
             });
             ToggleStart = new DelegateCommand(ToggleStartExecution);
             ToggleSpeed = new DelegateCommand(ToggleSpeedExecution);
-            BindingMoveUp = new DelegateCommand(() => MoveViewExecution(false,null));
-            BindingMoveDown = new DelegateCommand(() => MoveViewExecution(true,null));
-            BindingMoveLeft = new DelegateCommand(() => MoveViewExecution(null,false));
-            BindingMoveRight = new DelegateCommand(() => MoveViewExecution(null,true));
+            BindingMoveUp = new DelegateCommand(() => MoveViewExecution(ExpandDirection.Up));
+            BindingMoveDown = new DelegateCommand(() => MoveViewExecution(ExpandDirection.Down));
+            BindingMoveLeft = new DelegateCommand(() => MoveViewExecution(ExpandDirection.Left));
+            BindingMoveRight = new DelegateCommand(() => MoveViewExecution(ExpandDirection.Right));
             ToggleNode = new MouseClickPointCommand(ToggleNodeExecution);
             Resize = new SizeCommand(ResizeExecution);
 
@@ -69,9 +70,28 @@ namespace GameOfLife.UI
             ResetViewExecution();
         }
 
-        private void MoveViewExecution(bool? isHorizontal, bool? isVertical)
+        private void MoveViewExecution(ExpandDirection direction)
         {
-            
+            var cellsPerRow = _imageSize.Width / _resolution;
+            var cellsPerColumn = _imageSize.Height / _resolution;
+            switch (direction)
+            {
+                case ExpandDirection.Down:
+                    _spaceOffset.Y += Math.Round(cellsPerColumn / 2);
+                    break;
+                case ExpandDirection.Up:
+                    _spaceOffset.Y -= Math.Round(cellsPerColumn / 2);
+                    break;
+                case ExpandDirection.Left:
+                    _spaceOffset.X -= Math.Round(cellsPerRow / 2);
+                    break;
+                case ExpandDirection.Right:
+                    _spaceOffset.X += Math.Round(cellsPerRow / 2);
+                    break;
+            }
+            _image.RedrawImage(_nodes,_resolution, _spaceOffset);
+
+
         }
 
         private void ResizeExecution(Size obj)
@@ -79,7 +99,7 @@ namespace GameOfLife.UI
             _imageSize.Width = (int) obj.Width;
             _imageSize.Height = (int) obj.Height;
             RecreateImage();
-            _image.RedrawImage(_nodes, _resolution);
+            _image.RedrawImage(_nodes, _resolution, _spaceOffset);
         }
 
         private void ToggleSpeedExecution()
@@ -154,7 +174,7 @@ namespace GameOfLife.UI
             {
                 foreach (var position in changedPositions)
                 {
-                    _image.DrawCell(position.Row, position.Column, position.IsAlive);
+                    _image.DrawCellWithCoordinates(position.Row, position.Column, position.IsAlive,_spaceOffset);
                 }
 
                 AliveCount += counterDif;
@@ -186,25 +206,25 @@ namespace GameOfLife.UI
 
         private void RecreateImage()
         {
-            _image = new GridBitmapWrapper(_resolution, (int) _imageSize.Width, (int) _imageSize.Height);
+            _image = new GridBitmapWrapper(_resolution, new Size(_imageSize.Width, _imageSize.Height), _spaceOffset);
             RaisePropertyChanged(nameof(Source));
         }
 
         private void ToggleNodeExecution(Point point)
         {
-            var column = (int) point.X/_resolution;
-            var row = (int) point.Y / _resolution;
-            var columnCoordinate = column * _resolution;
-            var rowCoordinate = row * _resolution;
+            var column = (int) (point.X / _resolution + _spaceOffset.X);
+            var row = (int) (point.Y / _resolution + _spaceOffset.Y);
+            var columnCoordinate = (int) (point.X / _resolution * _resolution + _spaceOffset.X*_resolution);
+            var rowCoordinate = (int) (point.Y / _resolution * _resolution + _spaceOffset.Y * _resolution);
             if (!_nodes[row,column])
             {
-                _image.DrawCell(rowCoordinate, columnCoordinate, true);
+                _image.DrawCellWithCoordinates(rowCoordinate, columnCoordinate, true,_spaceOffset);
                 _nodes[row,column] = true;
                 AliveCount++;
             }
             else
             {
-                _image.DrawCell(rowCoordinate, columnCoordinate, false);
+                _image.DrawCellWithCoordinates(rowCoordinate, columnCoordinate, false, _spaceOffset);
                 _nodes[row, column] = false;
                 AliveCount--;
             }
@@ -220,7 +240,7 @@ namespace GameOfLife.UI
         {
             SetProperty(ref _resolution, newResolution);
             RaisePropertyChanged(nameof(Zoom));
-            _image.RedrawImage(_nodes,newResolution);
+            _image.RedrawImage(_nodes,newResolution, _spaceOffset);
         }
 
         private void ZoomOutExecution()
