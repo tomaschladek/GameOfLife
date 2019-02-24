@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Concurrent;
+using System.Collections.Generic;
 using System.Linq;
 using System.Windows;
 using System.Windows.Media;
@@ -9,6 +10,7 @@ namespace GameOfLife.Dtos
 {
     public class GridBitmapWrapper
     {
+        private IDictionary<(byte Blue, byte Green, byte Red, byte Alfa, int Height, int Width), byte[]> _cache;
         public WriteableBitmap Source { get; }
 
         public int Resolution { get; set; }
@@ -19,6 +21,7 @@ namespace GameOfLife.Dtos
 
         public GridBitmapWrapper(int resolution, Size size, Point offset)
         {
+            _cache = new Dictionary<(byte Blue, byte Green, byte Red, byte Alfa, int Height, int Width), byte[]>();
             Resolution = resolution;
             Size = size;
             Source = new WriteableBitmap(
@@ -82,11 +85,17 @@ namespace GameOfLife.Dtos
                 var height = (int)Math.Min(Size.Height, toRow) - fromRow;
 
                 var stride = width * 4;
-                var pixels = Enumerable
-                    .Repeat(new []{ color.B, color.G, color.R, color.A }, height * stride/4)
-                    .SelectMany(item => item)
-                    .ToArray();
-                Source.WritePixels(new Int32Rect(fromColumn, fromRow, width, height), pixels, stride, 0);
+
+                var tuple = (color.B, color.G, color.R, color.A, height, width);
+                if (!_cache.ContainsKey(tuple))
+                {
+                    _cache.Add(tuple, Enumerable
+                        .Repeat(new[] { color.B, color.G, color.R, color.A }, height * stride / 4)
+                        .SelectMany(item => item)
+                        .ToArray());
+                }
+
+                Source.WritePixels(new Int32Rect(fromColumn, fromRow, width, height), _cache[tuple], stride, 0);
             }
             finally
             {

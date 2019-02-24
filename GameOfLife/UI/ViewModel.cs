@@ -10,6 +10,7 @@ using System.Windows.Input;
 using System.Windows.Media.Imaging;
 using GameOfLife.Dtos;
 using GameOfLife.Services;
+using MaterialDesignThemes.Wpf;
 using Prism.Commands;
 using Prism.Mvvm;
 
@@ -119,7 +120,7 @@ namespace GameOfLife.UI
                     _speed = ESpeed.Normal;
                     break;
             }
-            RaisePropertyChanged(nameof(SpeedLabel));
+            RaisePropertyChanged(nameof(SpeedIcon));
         }
 
         private void ToggleStartExecution()
@@ -294,21 +295,21 @@ namespace GameOfLife.UI
         {
             get => $"{_spaceOffset.X}, {_spaceOffset.Y}";
         }
-        public string SpeedLabel
+        public PackIconKind SpeedIcon
         {
             get
             {
                 switch (_speed)
                 {
                     case ESpeed.Normal:
-                        return ">";
+                        return PackIconKind.PlaySpeed;
                     case ESpeed.Fast:
-                        return ">>";
+                        return PackIconKind.Play;
                     case ESpeed.Faster:
-                        return ">>>";
+                        return PackIconKind.FastForward;
                 }
 
-                return "?";
+                return PackIconKind.QuestionMark;
             }
         }
 
