@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Collections.Concurrent;
 using System.Diagnostics;
 using System.Globalization;
 using System.Threading;
@@ -44,6 +45,7 @@ namespace GameOfLife.UI
         private Size _imageSize = new Size(800,800);
         private Point _spaceOffset = new Point(0,0);
         private readonly Size _spaceSize = new Size(8000,8000);
+        private ConcurrentBag<NodeDto> _conflictNodes;
 
         public ViewModel()
         {
@@ -89,7 +91,7 @@ namespace GameOfLife.UI
                     _spaceOffset.X += Math.Round(cellsPerRow / 2);
                     break;
             }
-            _image.RedrawImage(_nodes,_resolution, _spaceOffset);
+            _image.RedrawImage(_conflictNodes,_resolution, _spaceOffset);
 
 
         }
@@ -99,7 +101,7 @@ namespace GameOfLife.UI
             _imageSize.Width = (int) obj.Width;
             _imageSize.Height = (int) obj.Height;
             RecreateImage();
-            _image.RedrawImage(_nodes, _resolution, _spaceOffset);
+            _image.RedrawImage(_conflictNodes, _resolution, _spaceOffset);
         }
 
         private void ToggleSpeedExecution()
@@ -141,16 +143,15 @@ namespace GameOfLife.UI
         private async void RunGenerations()
         {
             var sw = new Stopwatch();
-            var conflictNodes = _processor.CreateConflictSet(_nodes);
             while (!_token.IsCancellationRequested)
             {
                 sw.Restart();
 
-                var result = _processor.Execute(_nodes, _resolution, conflictNodes);
+                var result = _processor.Execute(_nodes, _resolution, _conflictNodes);
 
                 DrawPositions(result.ChangedPositions, result.CounterDif);
 
-                conflictNodes = result.ConflictSet;
+                _conflictNodes = result.ConflictSet;
 
                 sw.Stop();
 
@@ -168,7 +169,7 @@ namespace GameOfLife.UI
             });
         }
 
-        private void DrawPositions(System.Collections.Concurrent.ConcurrentBag<NodeDto> changedPositions, int counterDif)
+        private void DrawPositions(ConcurrentBag<NodeDto> changedPositions, int counterDif)
         {
             Application.Current.Dispatcher.Invoke(() =>
             {
@@ -200,6 +201,7 @@ namespace GameOfLife.UI
             GenerationCount = 0;
             AliveCount = 0;
             _nodes = new BitarrayWrapper((int) _spaceSize.Width,(int) _spaceSize.Height);
+            _conflictNodes = new ConcurrentBag<NodeDto>();
 
             RecreateImage();
         }
@@ -228,6 +230,7 @@ namespace GameOfLife.UI
                 _nodes[row, column] = false;
                 AliveCount--;
             }
+            _processor.AddSurroundingToCollection(_nodes,_conflictNodes,(int) (row*_spaceSize.Width+column));
         }
 
         private void ZoomInExecution()
@@ -240,7 +243,7 @@ namespace GameOfLife.UI
         {
             SetProperty(ref _resolution, newResolution);
             RaisePropertyChanged(nameof(Zoom));
-            _image.RedrawImage(_nodes,newResolution, _spaceOffset);
+            _image.RedrawImage(_conflictNodes, newResolution, _spaceOffset);
         }
 
         private void ZoomOutExecution()

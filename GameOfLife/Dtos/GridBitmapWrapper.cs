@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Collections.Concurrent;
 using System.Linq;
 using System.Windows;
 using System.Windows.Media;
@@ -94,7 +95,7 @@ namespace GameOfLife.Dtos
             }
         }
 
-        public void RedrawImage(BitarrayWrapper nodes, int resolution, Point spaceOffset)
+        public void RedrawImage(ConcurrentBag<NodeDto> nodes, int resolution, Point spaceOffset)
         {
             Resolution = resolution;
             ClearImage();
@@ -102,14 +103,13 @@ namespace GameOfLife.Dtos
             DrawLines(spaceOffset);
         }
 
-        private void DrawImage(BitarrayWrapper nodes, Point spaceOffset)
+        private void DrawImage(ConcurrentBag<NodeDto> conflictNodes, Point spaceOffset)
         {
-            for (var index = 0; index < nodes.Length; index++)
+            foreach (var node in conflictNodes)
             {
-                if (nodes[index])
+                if (node.IsAlive)
                 {
-                    var coordinates = nodes.GetCoordinates(index);
-                    DrawCell((int) (coordinates.Row * Resolution - spaceOffset.Y* Resolution), (int) (coordinates.Column * Resolution - spaceOffset.X* Resolution), true);
+                    DrawCell((int)(node.Row * Resolution - spaceOffset.Y * Resolution), (int)(node.Column * Resolution - spaceOffset.X * Resolution), true);
                 }
             }
         }

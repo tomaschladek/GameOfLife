@@ -109,20 +109,25 @@ namespace GameOfLife.Services
             return coordinateDtos;
         }
 
-        private static void AddToCollection(BitarrayWrapper nodes, ConcurrentBag<NodeDto> coordinateDtos, int index)
+        private void AddToCollection(BitarrayWrapper nodes, ConcurrentBag<NodeDto> coordinateDtos, int index)
         {
             if (nodes[index])
             {
-                for (int rowShift = -1; rowShift < 2; rowShift++)
-                    for (int columnShift = -1; columnShift < 2; columnShift++)
-                    {
-                        var newIndex = index + rowShift * nodes.Width + columnShift;
-                        if (newIndex < 0 || newIndex > nodes.Length) continue;
-
-                        var coordinates = nodes.GetCoordinates(newIndex);
-                        coordinateDtos.Add(new NodeDto(coordinates.Index, coordinates.Row, coordinates.Column, nodes[newIndex]));
-                    }
+                AddSurroundingToCollection(nodes, coordinateDtos, index);
             }
+        }
+
+        public void AddSurroundingToCollection(BitarrayWrapper nodes, ConcurrentBag<NodeDto> coordinateDtos, int index)
+        {
+            for (int rowShift = -1; rowShift < 2; rowShift++)
+                for (int columnShift = -1; columnShift < 2; columnShift++)
+                {
+                    var newIndex = index + rowShift * nodes.Width + columnShift;
+                    if (newIndex < 0 || newIndex > nodes.Length) continue;
+
+                    var coordinates = nodes.GetCoordinates(newIndex);
+                    coordinateDtos.Add(new NodeDto(coordinates.Index, coordinates.Row, coordinates.Column, nodes[newIndex]));
+                }
         }
     }
 }
