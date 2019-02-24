@@ -78,9 +78,8 @@
       <SubType>Designer</SubType>
     </ApplicationDefinition>
     <Compile Include="Dtos\BitarrayWrapper.cs" />
-    <Compile Include="Dtos\CoordinateDto.cs" />
-    <Compile Include="Dtos\GridBitmapWrapper.cs" />
     <Compile Include="Dtos\NodeDto.cs" />
+    <Compile Include="Dtos\GridBitmapWrapper.cs" />
     <Compile Include="Services\GenerationProcessor.cs" />
     <Compile Include="UI\PositioningCommand.cs" />
     <Compile Include="UI\ViewModel.cs" />

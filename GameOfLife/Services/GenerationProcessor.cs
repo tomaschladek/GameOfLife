@@ -11,41 +11,52 @@ namespace GameOfLife.Services
     {
         private readonly bool[,] _tempArray;
 
-        public GenerationProcessor(int size)
+        public GenerationProcessor(int width, int height)
         {
-            _tempArray = new bool[size,size];
+            _tempArray = new bool[width,height];
         }
 
-        public (ConcurrentBag<CoordinateDto> ChangedPositions, int CounterDif, ConcurrentBag<CoordinateDto> ConflictSet) Execute(BitarrayWrapper nodes, int resolution, ConcurrentBag<CoordinateDto> setOfInterest)
+        public (ConcurrentBag<NodeDto> ChangedPositions, int CounterDif, ConcurrentBag<NodeDto> ConflictSet) Execute(BitarrayWrapper nodes, int resolution, ConcurrentBag<NodeDto> setOfInterest)
         {
-            var changedPositions = new ConcurrentBag<CoordinateDto>();
-            Parallel.ForEach(setOfInterest,
-                coordinates =>
-                {
-                    _tempArray[coordinates.Row, coordinates.Column] = IsAlive(coordinates.Index, coordinates.Row, coordinates.Column, nodes); 
-                });
+            EvaluateSet(nodes, setOfInterest);
+            var result = WriteChangesToState(nodes, resolution, setOfInterest);
+            var newConflictSet = CreateConflictSet(nodes, result.ChangedPositions.Union(setOfInterest));
+            return (result.ChangedPositions, result.Counter, newConflictSet);
+        }
+
+        private (int Counter, ConcurrentBag<NodeDto> ChangedPositions) WriteChangesToState(BitarrayWrapper nodes, int resolution, ConcurrentBag<NodeDto> setOfInterest)
+        {
             var counter = 0;
+            var changedPositions = new ConcurrentBag<NodeDto>();
+            Parallel.ForEach(setOfInterest,
+            coordinates =>
+            {
+                if (_tempArray[coordinates.Row, coordinates.Column] != nodes[coordinates.Index])
+                {
+                    nodes[coordinates.Index] = _tempArray[coordinates.Row, coordinates.Column];
+
+                    if (_tempArray[coordinates.Row, coordinates.Column])
+                    {
+                        Interlocked.Increment(ref counter);
+                    }
+                    else
+                    {
+                        Interlocked.Decrement(ref counter);
+                    }
+
+                    changedPositions.Add(new NodeDto(coordinates.Index, coordinates.Row * resolution, coordinates.Column * resolution, _tempArray[coordinates.Row, coordinates.Column]));
+                }
+            });
+            return (counter, changedPositions);
+        }
+
+        private void EvaluateSet(BitarrayWrapper nodes, ConcurrentBag<NodeDto> setOfInterest)
+        {
             Parallel.ForEach(setOfInterest,
                 coordinates =>
                 {
-                    if (_tempArray[coordinates.Row, coordinates.Column] != nodes[coordinates.Index])
-                    {
-                        nodes[coordinates.Index] =_tempArray[coordinates.Row, coordinates.Column];
-
-                        if (_tempArray[coordinates.Row, coordinates.Column])
-                        {
-                            Interlocked.Increment(ref counter);
-                        }
-                        else
-                        {
-                            Interlocked.Decrement(ref counter);
-                        }
-
-                        changedPositions.Add(new CoordinateDto(coordinates.Index,coordinates.Row * resolution, coordinates.Column * resolution, _tempArray[coordinates.Row, coordinates.Column]));
-                    }
-            });
-            var newConflictSet = CreateConflictSet(nodes,changedPositions.Union(setOfInterest));
-            return (changedPositions, counter, newConflictSet);
+                    _tempArray[coordinates.Row, coordinates.Column] = IsAlive(coordinates.Index, coordinates.Row, coordinates.Column, nodes);
+                });
         }
 
         private bool IsAlive(int index, int row, int column, BitarrayWrapper nodes)
@@ -58,16 +69,12 @@ namespace GameOfLife.Services
 
                 for (int colShift = -1; colShift < 2 && counter < 4; colShift++)
                 {
-                    if (rowShift == 0 && colShift == 0) continue;
-                    if (column + colShift <= 0 || column + colShift >= nodes.Width) continue;
-
-                    var newIndex = newRow + colShift;
-                    
-                    if (nodes[newIndex])
+                    if (rowShift == 0 && colShift == 0 
+                        || column + colShift <= 0 || column + colShift >= nodes.Width) continue;                   
+                    if (nodes[newRow + colShift])
                     {
                         counter++;
                     }
-
                 }
             }
 
@@ -80,9 +87,9 @@ namespace GameOfLife.Services
 
         }
 
-        public ConcurrentBag<CoordinateDto> CreateConflictSet(BitarrayWrapper nodes)
+        public ConcurrentBag<NodeDto> CreateConflictSet(BitarrayWrapper nodes)
         {
-            var coordinateDtos = new ConcurrentBag<CoordinateDto>();
+            var coordinateDtos = new ConcurrentBag<NodeDto>();
             for (var index = 0; index < nodes.Length; index++)
             {
                 AddToCollection(nodes, coordinateDtos, index);
@@ -91,9 +98,9 @@ namespace GameOfLife.Services
             return coordinateDtos;
         }
 
-        private ConcurrentBag<CoordinateDto> CreateConflictSet(BitarrayWrapper nodes, IEnumerable<CoordinateDto> originals)
+        private ConcurrentBag<NodeDto> CreateConflictSet(BitarrayWrapper nodes, IEnumerable<NodeDto> originals)
         {
-            var coordinateDtos = new ConcurrentBag<CoordinateDto>();
+            var coordinateDtos = new ConcurrentBag<NodeDto>();
             foreach (var original in originals)
             {
                 AddToCollection(nodes,coordinateDtos,original.Index);
@@ -102,7 +109,7 @@ namespace GameOfLife.Services
             return coordinateDtos;
         }
 
-        private static void AddToCollection(BitarrayWrapper nodes, ConcurrentBag<CoordinateDto> coordinateDtos, int index)
+        private static void AddToCollection(BitarrayWrapper nodes, ConcurrentBag<NodeDto> coordinateDtos, int index)
         {
             if (nodes[index])
             {
@@ -111,8 +118,9 @@ namespace GameOfLife.Services
                     {
                         var newIndex = index + rowShift * nodes.Width + columnShift;
                         if (newIndex < 0 || newIndex > nodes.Length) continue;
+
                         var coordinates = nodes.GetCoordinates(newIndex);
-                        coordinateDtos.Add(new CoordinateDto(coordinates.Index, coordinates.Row, coordinates.Column, nodes[newIndex]));
+                        coordinateDtos.Add(new NodeDto(coordinates.Index, coordinates.Row, coordinates.Column, nodes[newIndex]));
                     }
             }
         }

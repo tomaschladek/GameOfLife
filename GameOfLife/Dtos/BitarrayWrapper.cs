@@ -16,11 +16,11 @@ namespace GameOfLife.Dtos
             Height = height;
         }
 
-        public CoordinateDto GetCoordinates(int index)
+        public NodeDto GetCoordinates(int index)
         {
             var row = index / Width;
             var column = index - row * Width;
-            return new CoordinateDto(index, row, column, false);
+            return new NodeDto(index, row, column, false);
         }
 
         private int GetCellIndex(int row, int column)

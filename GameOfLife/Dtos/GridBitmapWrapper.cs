@@ -29,14 +29,14 @@ namespace GameOfLife.Dtos
                 96,
                 PixelFormats.Bgr32,
                 null);
-            ClearDrawAll();
+            ClearImage();
             DrawLines();
         }
 
         private void DrawLines()
         {
             var color = Colors.AliceBlue;
-            for (var row = 0; row < Width/Resolution; row++)
+            for (var row = 0; row < Height/Resolution; row++)
             {
                 DrawPixelsArea(color, 0, Width, row*Resolution, row * Resolution + LineThicknes);
             }
@@ -46,18 +46,16 @@ namespace GameOfLife.Dtos
             }
         }
 
-        private void ClearDrawAll()
+        private void ClearImage()
         {
             DrawPixelsArea(Colors.White, 0, Width, 0, Height);
         }
 
-        // The DrawPixel method updates the WriteableBitmap by using
-        // unsafe code to write a pixel into the back buffer.
-        internal void DrawCell(int row, int column, Color color)
+        internal void DrawCell(int row, int column, bool isAlive)
         {
             var columnStart = column / Resolution * Resolution;
             var rowStart = row / Resolution * Resolution;
-
+            var color = isAlive ? Colors.CadetBlue : Colors.White;
 
             DrawPixelsArea(color, columnStart+ LineThicknes, columnStart+Resolution, rowStart + LineThicknes, rowStart+Resolution);
         }
@@ -88,23 +86,23 @@ namespace GameOfLife.Dtos
             }
         }
 
-        public void ChangeResolution(BitarrayWrapper nodes, int resolution)
+        public void RedrawImage(BitarrayWrapper nodes, int resolution)
         {
             Resolution = resolution;
-            ClearDrawAll();
-            RedrawImage(nodes);
+            ClearImage();
+            DrawImage(nodes);
             DrawLines();
         }
-        private void RedrawImage(BitarrayWrapper nodes)
+
+        private void DrawImage(BitarrayWrapper nodes)
         {
             for (var index = 0; index < nodes.Length; index++)
             {
                 if (nodes[index])
                 {
                     var coordinates = nodes.GetCoordinates(index);
-                    DrawCell(coordinates.Row * Resolution, coordinates.Column * Resolution, Colors.CadetBlue);
+                    DrawCell(coordinates.Row * Resolution, coordinates.Column * Resolution, true);
                 }
-                
             }
         }
     }

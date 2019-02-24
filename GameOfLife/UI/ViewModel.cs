@@ -5,7 +5,6 @@ using System.Threading;
 using System.Threading.Tasks;
 using System.Windows;
 using System.Windows.Input;
-using System.Windows.Media;
 using System.Windows.Media.Imaging;
 using GameOfLife.Dtos;
 using GameOfLife.Services;
@@ -89,7 +88,6 @@ namespace GameOfLife.UI
             }
 
             _isRunning = !_isRunning;
-
         }
 
         private async void RunGenerations()
@@ -101,25 +99,38 @@ namespace GameOfLife.UI
                 sw.Restart();
 
                 var result = _processor.Execute(_nodes, _resolution, conflictNodes);
-                Application.Current.Dispatcher.Invoke(() =>
-                {
-                    foreach (var position in result.ChangedPositions)
-                    {
-                        _image.DrawCell(position.Row, position.Column, position.IsAlive ? Colors.CadetBlue : Colors.White);
-                    }
 
-                    AliveCount += result.CounterDif;
-                });
+                DrawPositions(result.ChangedPositions, result.CounterDif);
 
                 conflictNodes = result.ConflictSet;
+
                 sw.Stop();
-                Application.Current.Dispatcher.Invoke(() =>
-                {
-                    GenerationCount++;
-                    Duration = (int)sw.ElapsedMilliseconds;
-                });
+
+                DrawStatusLine(sw.ElapsedMilliseconds);
                 await Task.Delay((int)Math.Max(0, GetMaxDelayTime() - sw.ElapsedMilliseconds));
             }
+        }
+
+        private void DrawStatusLine(long milisecons)
+        {
+            Application.Current.Dispatcher.Invoke(() =>
+            {
+                GenerationCount++;
+                Duration = (int)milisecons;
+            });
+        }
+
+        private void DrawPositions(System.Collections.Concurrent.ConcurrentBag<NodeDto> changedPositions, int counterDif)
+        {
+            Application.Current.Dispatcher.Invoke(() =>
+            {
+                foreach (var position in changedPositions)
+                {
+                    _image.DrawCell(position.Row, position.Column, position.IsAlive);
+                }
+
+                AliveCount += counterDif;
+            });
         }
 
         private int GetMaxDelayTime()
@@ -140,10 +151,11 @@ namespace GameOfLife.UI
             StartLabel = "Start";
 
             var width = 800;
+            var height = 800;
             var factor = 1;
-            _processor = new GenerationProcessor(width / factor);
-            _nodes = new BitarrayWrapper(width/factor, width / factor);
-            _image = new GridBitmapWrapper(_resolution, width, width);
+            _processor = new GenerationProcessor(width / factor, height / factor);
+            _nodes = new BitarrayWrapper(width/factor, height / factor);
+            _image = new GridBitmapWrapper(_resolution, width, height);
             GenerationCount = 0;
             AliveCount = 0;
 
@@ -158,13 +170,13 @@ namespace GameOfLife.UI
             var rowCoordinate = row * _resolution;
             if (!_nodes[row,column])
             {
-                _image.DrawCell(rowCoordinate, columnCoordinate, Colors.CadetBlue);
+                _image.DrawCell(rowCoordinate, columnCoordinate, true);
                 _nodes[row,column] = true;
                 AliveCount++;
             }
-            else 
+            else
             {
-                _image.DrawCell(rowCoordinate, columnCoordinate, Colors.White);
+                _image.DrawCell(rowCoordinate, columnCoordinate, false);
                 _nodes[row, column] = false;
                 AliveCount--;
             }
@@ -180,7 +192,7 @@ namespace GameOfLife.UI
         {
             SetProperty(ref _resolution, newResolution);
             RaisePropertyChanged(nameof(Zoom));
-            _image.ChangeResolution(_nodes,newResolution);
+            _image.RedrawImage(_nodes,newResolution);
         }
 
         private void ZoomOutExecution()
