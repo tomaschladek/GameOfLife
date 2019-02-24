@@ -17,6 +17,7 @@ namespace GameOfLife.UI
 {
     public class ViewModel : BindableBase
     {
+        private int _resolutionExponent = 5;
         private int _resolution = 32;
         private const int MaxResolution = 128;
         private const int MinResolution = 4;
@@ -43,7 +44,7 @@ namespace GameOfLife.UI
         private Visibility _resetVisibility = Visibility.Collapsed;
         private readonly GenerationProcessor _processor;
         private Size _imageSize = new Size(800,800);
-        private Point _spaceOffset = new Point(0,0);
+        private Point _spaceOffset = new Point(4000,4000);
         private readonly Size _spaceSize = new Size(8000,8000);
         private ConcurrentBag<NodeDto> _conflictNodes;
 
@@ -79,20 +80,20 @@ namespace GameOfLife.UI
             switch (direction)
             {
                 case ExpandDirection.Down:
-                    _spaceOffset.Y += Math.Round(cellsPerColumn / 2);
+                    _spaceOffset.Y = Math.Min(_spaceSize.Height-_imageSize.Height, Math.Round(cellsPerColumn / 2) + _spaceOffset.Y);
                     break;
                 case ExpandDirection.Up:
-                    _spaceOffset.Y -= Math.Round(cellsPerColumn / 2);
+                    _spaceOffset.Y = Math.Max(0, _spaceOffset.Y - Math.Round(cellsPerColumn / 2));
                     break;
                 case ExpandDirection.Left:
-                    _spaceOffset.X -= Math.Round(cellsPerRow / 2);
+                    _spaceOffset.X = Math.Max(0, _spaceOffset.X - Math.Round(cellsPerRow / 2));
                     break;
                 case ExpandDirection.Right:
-                    _spaceOffset.X += Math.Round(cellsPerRow / 2);
+                    _spaceOffset.X = Math.Min(_spaceSize.Width - _imageSize.Width, Math.Round(cellsPerRow / 2) + _spaceOffset.X);
                     break;
             }
             _image.RedrawImage(_conflictNodes,_resolution, _spaceOffset);
-
+            RaisePropertyChanged(nameof(Coordinates));
 
         }
 
@@ -235,24 +236,34 @@ namespace GameOfLife.UI
 
         private void ZoomInExecution()
         {
-            var newResolution = Math.Min(_resolution * 2, MaxResolution);
-            SetResolution(newResolution);
+            ResolutionExponent++;
         }
 
-        private void SetResolution(int newResolution)
+        private void SetResolution()
         {
-            SetProperty(ref _resolution, newResolution);
+            var resolution = Math.Pow(2, _resolutionExponent);
+            var resolutionWithinBounds = (int) Math.Max(MinResolution,Math.Min(resolution, MaxResolution));
+            SetProperty(ref _resolution, resolutionWithinBounds);
             RaisePropertyChanged(nameof(Zoom));
-            _image.RedrawImage(_conflictNodes, newResolution, _spaceOffset);
+            _image.RedrawImage(_conflictNodes, resolutionWithinBounds, _spaceOffset);
         }
 
         private void ZoomOutExecution()
         {
-            var newResolution = Math.Max(_resolution/2,MinResolution);
-            SetResolution(newResolution);
+            ResolutionExponent--;
         }
 
         public string Zoom => Math.Round(Math.Log(_resolution,2)).ToString(CultureInfo.InvariantCulture);
+
+        public int ResolutionExponent
+        {
+            get => _resolutionExponent;
+            set
+            {
+                SetProperty(ref _resolutionExponent, value);
+                SetResolution();
+            }
+        }
 
         public WriteableBitmap Source
         {
@@ -278,6 +289,10 @@ namespace GameOfLife.UI
         {
             get => _startLabel;
             set => SetProperty(ref _startLabel, value);
+        }
+        public string Coordinates
+        {
+            get => $"{_spaceOffset.X}, {_spaceOffset.Y}";
         }
         public string SpeedLabel
         {

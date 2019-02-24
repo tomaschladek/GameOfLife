@@ -12,21 +12,27 @@
         </Window.DataContext>
     <DockPanel>
         <DockPanel DockPanel.Dock="Top">
-            <Button Command="{Binding ToggleSpeed}" Content="{Binding SpeedLabel}" Margin="0 0 10 0"/>
-            <Button Command="{Binding ZoomIn}">+</Button>
-            <Button Command="{Binding ZoomOut}">-</Button>
+            <Button Command="{Binding ToggleSpeed}" Margin="0 0 20 0">
+                <StackPanel Orientation="Horizontal">
+                    <materialdesign:PackIcon Kind="Speedometer" VerticalAlignment="Center" Margin="3" Width="20" Height="20"></materialdesign:PackIcon>
+                    <Label Content="{Binding SpeedLabel}" Foreground="{StaticResource PrimaryHueMidForegroundBrush}" VerticalAlignment="Center"/>
+                </StackPanel>
+            </Button>
+            <materialdesign:PackIcon Kind="Magnify" VerticalAlignment="Center" Margin="3" Width="20" Height="20"></materialdesign:PackIcon>
             <Button Command="{Binding ResetView}"  Margin="10 0 0 0" DockPanel.Dock="Right" Background="{StaticResource SecondaryAccentBrush}" Foreground="{StaticResource SecondaryAccentForegroundBrush}" Visibility="{Binding ResetVisibility}">Reset</Button>
             <Button Command="{Binding ToggleStart}" DockPanel.Dock="Right" Content="{Binding StartLabel}"/>
+            <Slider Minimum="2" Maximum="6" Value="{Binding ResolutionExponent}" Width="100" VerticalAlignment="Center"/>
             <Label ContentStringFormat=" {0}x" Content="{Binding Zoom}"/>
         </DockPanel>
-        <StackPanel DockPanel.Dock="Bottom" Orientation="Horizontal">
+        <DockPanel DockPanel.Dock="Bottom" LastChildFill="False">
             <Label>Alive</Label>
             <Label Content="{Binding AliveCount}"/>
             <Label>Generation</Label>
             <Label Content="{Binding GenerationCount}"/>
             <Label>Duration</Label>
             <Label Content="{Binding Duration}" ContentStringFormat=" {0}ms"/>
-        </StackPanel>
+            <Label DockPanel.Dock="Right" Content="{Binding Coordinates}" ContentStringFormat="[{0}]"/>
+        </DockPanel>
         <DockPanel>
             <DockPanel.Resources>
                 <Style x:Key="Slider" TargetType="Button">
