@@ -69,9 +69,26 @@ namespace GameOfLife.UI
             BindingMoveRight = new DelegateCommand(() => MoveViewExecution(ExpandDirection.Right));
             ToggleNode = new MouseClickPointCommand(ToggleNodeExecution);
             Resize = new SizeCommand(ResizeExecution);
-
             _processor = new GenerationProcessor((int) _spaceSize.Width, (int) _spaceSize.Height);
             ResetViewExecution();
+
+            var points = new[]
+            {
+                new Point(3,3),
+                new Point(4,3),
+                new Point(5,3),
+                new Point(5,2),
+                new Point(4,1),
+            };
+            InitializeGrid(points);
+        }
+
+        private void InitializeGrid(Point[] points)
+        {
+            foreach (Point node in points)
+            {
+                ToggleNodeExecution(new Point(node.X* _resolution, node.Y*_resolution));
+            }
         }
 
         private void MoveViewExecution(ExpandDirection direction)
