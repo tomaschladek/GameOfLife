@@ -9,3 +9,5 @@ It has following features:
 - Speed moderation
 
 One generation takes bellow 10ms with unlimited space for cells. 
+
+![Initial screen](./ScreenExample.png)
